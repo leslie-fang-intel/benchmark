@@ -105,6 +105,8 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
             model.forward = dynamo_optimizer(model.forward)
         else:
             model.train = dynamo_optimizer(model.train)
+    elif precision == "inductor_int8":
+        model.model = torch.compile(model.model)
     else:
         model.eval = dynamo_optimizer(model.eval)
 

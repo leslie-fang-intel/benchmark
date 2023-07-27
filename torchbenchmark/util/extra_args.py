@@ -5,7 +5,7 @@ from torchbenchmark.util.backends import list_backends, BACKENDS
 from torchbenchmark.util.env_check import is_staged_train_test
 
 TEST_STAGE = enum.Enum('TEST_STAGE', ['FORWARD', 'BACKWARD', 'OPTIMIZER', 'ALL'])
-AVAILABLE_PRECISIONS = ["fp32", "tf32", "fp16", "amp", "fx_int8", "bf16","amp_fp16", "amp_bf16"]
+AVAILABLE_PRECISIONS = ["fp32", "tf32", "fp16", "amp", "fx_int8", "bf16","amp_fp16", "amp_bf16", "inductor_int8"]
 QUANT_ENGINES = ["x86", "fbgemm", "qnnpack", "onednn"]
 
 
@@ -24,6 +24,8 @@ def check_precision(model: 'torchbenchmark.util.model.BenchmarkModel', precision
         return True
     if precision == "fx_int8":
         return model.device == 'cpu' and hasattr(model, "enable_fx_int8")
+    if precision == "inductor_int8":
+        return model.device == 'cpu' and hasattr(model, "enable_inductor_int8")
     if precision == "bf16":
         return model.device == 'cpu' and hasattr(model, "enable_bf16")
     if precision == "amp_fp16":
@@ -102,6 +104,9 @@ def apply_decoration_args(model: 'torchbenchmark.util.model.BenchmarkModel', dar
     elif dargs.precision == "fx_int8":
         assert model.device == "cpu" and model.test == "eval", f"fx_int8 only work for eval mode on cpu device."
         model.enable_fx_int8(dargs.quant_engine)
+    elif dargs.precision == "inductor_int8":
+        assert model.device == "cpu" and model.test == "eval", f"fx_int8 only work for eval mode on cpu device."
+        model.enable_inductor_int8()
     elif dargs.precision == "bf16":
         assert model.device == "cpu", f"bf16 only work on cpu device."
         model.enable_bf16()

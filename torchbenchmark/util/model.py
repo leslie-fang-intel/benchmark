@@ -15,6 +15,7 @@ from torchbenchmark.util.extra_args import parse_opt_args, apply_opt_args, \
 from torchbenchmark.util.env_check import set_random_seed, is_hf_model, \
                                           save_deterministic_dict, load_deterministic_dict, check_accuracy
 from torchbenchmark.util.fx_int8 import get_sub_module, prepare_sub_module, convert_sub_module
+from torchbenchmark.util.inductor_int8 import get_inductor_int8_convert_model
 
 SPECIAL_DEVICE_MAPPING = {
     "AMD Instinct MI210": "NVIDIA A100-SXM4-40GB"
@@ -128,8 +129,19 @@ class BenchmarkModel(metaclass=PostInitProcessor):
         # apply decoration args
         apply_decoration_args(self, self.dargs)
         # apply optimization args
-        if self.dynamo:
+        if self.dynamo or self.dargs.precision == "inductor_int8":
+            if self.dargs.precision == "inductor_int8":
+                self.opt_args.torchdynamo = "inductor"
+                self.opt_args.dynamic_shapes = False
+                self.opt_args.full_graph = False
+                self.opt_args.pt2_debug_log = False
+                self.opt_args.torchinductor_cudagraph = False
+                self.opt_args.tritonmm = None
+                self.opt_args.torchinductor_fallback_random = False
+                self.opt_args.dynamo_disable_optimizer_step = False
+                self.opt_args.optimize_dynamo_ddp = False
             from torchbenchmark.util.backends.torchdynamo import apply_torchdynamo_args
+            print("hit the dynamo path")
             apply_torchdynamo_args(self, self.opt_args, self.dargs.precision)
         else:
             apply_opt_args(self, self.opt_args)
@@ -317,6 +329,17 @@ class BenchmarkModel(metaclass=PostInitProcessor):
             self.eval()
             model, _ = self.get_module()
             model = convert_sub_module(sub_module_list, model, '')
+            self.set_module(model)
+        except Exception as e:
+            print(e)
+            raise RuntimeError(f"{self.name} doesn't support `fx_int8` yet!")
+
+    def enable_inductor_int8(self,):
+        try:
+            model, _ = self.get_module()
+            print("inside enable_inductor_int8 self.example_inputs is:{}".format(self.example_inputs), flush=True)
+            model = get_inductor_int8_convert_model(model, self.example_inputs)
+            self.eval()
             self.set_module(model)
         except Exception as e:
             print(e)
