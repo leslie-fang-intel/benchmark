@@ -21,6 +21,7 @@ class TorchBenchModelConfig:
     batch_size: Optional[int]
     extra_args: List[str]
     extra_env: Optional[Dict[str, str]] = None
+    jit: bool = True
 
 def _set_extra_env(extra_env):
     if not extra_env:
