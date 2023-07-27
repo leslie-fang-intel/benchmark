@@ -9,8 +9,8 @@ from torchbenchmark.util.experiment.instantiator import TorchBenchModelConfig
 from torchbenchmark import ModelTask
 from typing import List, Union, Tuple, Optional
 
-WARMUP_ROUNDS = 10
-BENCHMARK_ITERS = 15
+WARMUP_ROUNDS = 100
+BENCHMARK_ITERS = 100
 MEMPROF_ITER = 2
 NANOSECONDS_PER_MILLISECONDS = 1_000_000.0
 

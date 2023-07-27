@@ -150,6 +150,7 @@ class BenchmarkModel(metaclass=PostInitProcessor):
         # Need to clean up the cache because we run deep copy within correceness check
         if self.device == "cuda":
             torch.cuda.empty_cache()
+        # import pdb;pdb.set_trace()
 
     def determine_batch_size(self, batch_size=None):
         # batch size priority for eval tests: not ALLOW_CUSTOMIZE_BSIZE > user specified > device specified > default

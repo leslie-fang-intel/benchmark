@@ -33,11 +33,31 @@ def torchscript(model: 'torchbenchmark.util.model.BenchmarkModel', backend_args:
         if hasattr(torch.jit, '_script_pdt'):
             module = torch.jit._script_pdt(module, example_inputs=[example_inputs, ])
         else:
-            module = torch.jit.script(module, example_inputs=[example_inputs, ])
+            with torch.no_grad():
+                # module = torch.jit.script(module, example_inputs=[example_inputs, ])
+
+                x = example_inputs[0]
+                example_inputs = (x.contiguous(memory_format=torch.channels_last), )
+                print(example_inputs)
+                
+                module = torch.jit.trace(module, example_inputs).eval()
+
+                module = torch.jit.freeze(module)
+                for _ in range(3):
+                    module(*example_inputs)
+                #print(model.graph_for(*example_inputs))
+                print(module.graph_for(*example_inputs), flush=True)
+                import time
+                for i in range(200):
+                    start = time.time()
+                    module(*example_inputs)
+                    print(time.time()-start, flush=True)
+
         if model.test == "eval" and not backend_args.no_ofi:
             if backend_args.fuser != "fuser3":
                 module = torch.jit.optimize_for_inference(module)
             else:
                 module = torch.jit.freeze(module)
+                print(module.graph_for(*example_inputs), flush=True)
         model.set_module(module)
     return _torchscript, extra_args

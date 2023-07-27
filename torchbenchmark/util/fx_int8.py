@@ -64,25 +64,28 @@ def get_sub_module(model, module_dict, prefix):
 
 def prepare_sub_module(sub_module_list, model, prefix, quant_engine:str='x86'):
     qconfig_mapping = get_default_qconfig_mapping(quant_engine)
-    for name, module in model.named_children():
-        op_name = prefix + '.' + name if prefix != '' else name
-        if op_name in sub_module_list:
-            prepared_module = prepare_fx(module, qconfig_mapping, None)
-            _append_attr(prepared_module, module)
-            setattr(model, name, prepared_module)
-        else:
-            prepared_module = prepare_sub_module(sub_module_list, module, op_name, quant_engine)
-            _append_attr(prepared_module, module)
-            setattr(model, name, prepared_module)
+    # for name, module in model.named_children():
+    #     op_name = prefix + '.' + name if prefix != '' else name
+    #     if op_name in sub_module_list:
+    #         prepared_module = prepare_fx(module, qconfig_mapping, None)
+    #         _append_attr(prepared_module, module)
+    #         setattr(model, name, prepared_module)
+    #     else:
+    #         prepared_module = prepare_sub_module(sub_module_list, module, op_name, quant_engine)
+    #         _append_attr(prepared_module, module)
+    #         setattr(model, name, prepared_module)
+    x = torch.randn(116, 3, 224, 224).contiguous(memory_format=torch.channels_last)
+    model = prepare_fx(model, qconfig_mapping, x)
     return model
 
 def convert_sub_module(sub_module_list, model, prefix):
-    for name, module in model.named_children():
-        op_name = prefix + '.' + name if prefix != '' else name
-        if op_name in sub_module_list:
-            convert_module = convert_fx(module)
-            setattr(model, name, convert_module)
-        else:
-            convert_module = convert_sub_module(sub_module_list, module, op_name)
-            setattr(model, name, convert_module)
+    # for name, module in model.named_children():
+    #     op_name = prefix + '.' + name if prefix != '' else name
+    #     if op_name in sub_module_list:
+    #         convert_module = convert_fx(module)
+    #         setattr(model, name, convert_module)
+    #     else:
+    #         convert_module = convert_sub_module(sub_module_list, module, op_name)
+    #         setattr(model, name, convert_module)
+    model = convert_fx(model)
     return model
