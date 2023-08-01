@@ -1,5 +1,5 @@
-import torch.ao.quantization.pt2e.quantizer.x86_inductor_quantizer as xiq
-from torch.ao.quantization.pt2e.quantizer import X86InductorQuantizer
+import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
+from torch.ao.quantization.quantizer import X86InductorQuantizer
 from torch.ao.quantization.quantize_pt2e import convert_pt2e, prepare_pt2e
 import copy
 import torch._dynamo as torchdynamo
