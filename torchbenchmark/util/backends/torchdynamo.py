@@ -112,6 +112,8 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
             model.forward = dynamo_optimizer(model.forward)
         else:
             model.train = dynamo_optimizer(model.train)
+    elif model.device == "cpu" and model.test == "eval" and args.quantize:
+        model.model = torch.compile(model.model)
     else:
         model.eval = dynamo_optimizer(model.eval)
 
@@ -131,8 +133,8 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
 def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel'):
     import copy
     from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e
-    import torch.ao.quantization.pt2e.quantizer.x86_inductor_quantizer as xiq
-    from torch.ao.quantization.pt2e.quantizer import X86InductorQuantizer
+    import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
+    from torch.ao.quantization.quantizer import X86InductorQuantizer
     module, example_inputs = model.get_module()
     # Generate the FX Module
     exported_model, guards = torchdynamo.export(
@@ -145,7 +147,9 @@ def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel'):
     quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
     # PT2E Quantization flow
     prepared_model = prepare_pt2e(exported_model, quantizer)
+    print("prepared_model is: {}".format(prepared_model), flush=True)
     # Calibration
     prepared_model(*example_inputs)
     converted_model = convert_pt2e(prepared_model).eval()
+    print("converted_model is: {}".format(converted_model), flush=True)
     model.set_module(converted_model)

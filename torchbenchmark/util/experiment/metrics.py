@@ -29,6 +29,7 @@ def get_latencies(func, device: str, nwarmup=WARMUP_ROUNDS, num_iter=BENCHMARK_I
     for _i in range(nwarmup):
         func()
     result_summary = []
+    print("---- start the formal run -----", flush=True)
     for _i in range(num_iter):
         if device == "cuda":
             torch.cuda.synchronize()
@@ -43,6 +44,7 @@ def get_latencies(func, device: str, nwarmup=WARMUP_ROUNDS, num_iter=BENCHMARK_I
             func()
             t1 = time.time_ns()
         result_summary.append((t1 - t0) / NANOSECONDS_PER_MILLISECONDS)
+    print("---- Finish the formal run -----", flush=True)
     return result_summary
 
 
