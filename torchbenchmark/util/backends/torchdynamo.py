@@ -8,6 +8,12 @@ from typing import List
 import torch
 import torch._dynamo as torchdynamo
 from torchbenchmark.util.model import is_staged_train_test
+from torch._export import capture_pre_autograd_graph, dynamic_dim
+
+torch._dynamo.config.verbose = True
+torch._inductor.config.trace.enabled = True
+torch._inductor.config.trace.debug_log = True
+torch._inductor.config.debug = True
 
 def parse_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', dynamo_args: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -137,11 +143,19 @@ def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel'):
     from torch.ao.quantization.quantizer.x86_inductor_quantizer import X86InductorQuantizer
     module, example_inputs = model.get_module()
     # Generate the FX Module
-    exported_model, guards = torchdynamo.export(
-            module,
-            *copy.deepcopy(example_inputs),
-            aten_graph=True,
-        )
+    # exported_model, guards = torchdynamo.export(
+    #         module,
+    #         *copy.deepcopy(example_inputs),
+    #         aten_graph=True,
+    #     )
+    export_with_dynamic_shape = False
+    exported_model = capture_pre_autograd_graph(
+        module,
+        example_inputs,
+        constraints=[dynamic_dim(example_inputs[0], 0)]
+        if export_with_dynamic_shape
+        else [],
+    )
     # Create X86InductorQuantizer
     quantizer = X86InductorQuantizer()
     quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
