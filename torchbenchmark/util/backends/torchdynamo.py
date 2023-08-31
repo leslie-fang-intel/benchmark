@@ -148,13 +148,17 @@ def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel'):
     #         *copy.deepcopy(example_inputs),
     #         aten_graph=True,
     #     )
-    export_with_dynamic_shape = False
+    # export_with_dynamic_shape = False
+    # exported_model = capture_pre_autograd_graph(
+    #     module,
+    #     example_inputs,
+    #     constraints=[dynamic_dim(example_inputs[0], 0)]
+    #     if export_with_dynamic_shape
+    #     else [],
+    # )
     exported_model = capture_pre_autograd_graph(
         module,
         example_inputs,
-        constraints=[dynamic_dim(example_inputs[0], 0)]
-        if export_with_dynamic_shape
-        else [],
     )
     # Create X86InductorQuantizer
     quantizer = X86InductorQuantizer()
