@@ -14,6 +14,8 @@ torch._dynamo.config.verbose = True
 torch._inductor.config.trace.enabled = True
 torch._inductor.config.trace.debug_log = True
 torch._inductor.config.debug = True
+torch._dynamo.config.assume_static_by_default = False
+torch._dynamo.config.automatic_dynamic_shapes = True
 
 def parse_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', dynamo_args: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -119,7 +121,7 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
         else:
             model.train = dynamo_optimizer(model.train)
     elif model.device == "cpu" and model.test == "eval" and args.quantize:
-        model.model = torch.compile(model.model)
+        model.model = torch.compile(model.model, dynamic=True)
     else:
         model.eval = dynamo_optimizer(model.eval)
 
