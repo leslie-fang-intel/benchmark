@@ -168,6 +168,7 @@ def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel'):
     print("prepared_model is: {}".format(prepared_model), flush=True)
     # Calibration
     prepared_model(*example_inputs)
-    converted_model = convert_pt2e(prepared_model).eval()
+    converted_model = convert_pt2e(prepared_model)
+    torch.ao.quantization.move_exported_model_to_eval(converted_model)
     print("converted_model is: {}".format(converted_model), flush=True)
     model.set_module(converted_model)
