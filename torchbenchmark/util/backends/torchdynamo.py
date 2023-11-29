@@ -8,6 +8,7 @@ from typing import List
 import torch
 import torch._dynamo as torchdynamo
 from torchbenchmark.util.model import is_staged_train_test
+import copy
 
 def parse_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', dynamo_args: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -142,25 +143,30 @@ def apply_torchdynamo_args(model: 'torchbenchmark.util.model.BenchmarkModel', ar
     torchdynamo.reset()
 
 def enable_inductor_quant(model: 'torchbenchmark.util.model.BenchmarkModel', is_qat: 'bool'=False):
-    from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e, prepare_qat_pt2e
+    from torch.ao.quantization.quantize_pt2e import prepare_pt2e, convert_pt2e
     import torch.ao.quantization.quantizer.x86_inductor_quantizer as xiq
     from torch._export import capture_pre_autograd_graph, dynamic_dim
     module, example_inputs = model.get_module()
     # Create X86InductorQuantizer
+
+    # print("---- hit here -----", flush=True)
+
     quantizer = xiq.X86InductorQuantizer()
-    quantizer.set_global(xiq.get_default_x86_inductor_quantization_config(is_qat=is_qat))
+    quantizer.set_global(xiq.get_default_x86_inductor_quantization_config())
     # Generate the FX Module
     if is_qat:
         module.train()
-    exported_model = capture_pre_autograd_graph(
-            module,
-            example_inputs
-        )
+    # exported_model = capture_pre_autograd_graph(
+    #         module,
+    #         example_inputs
+    #     )
+    exported_model, guards = torch._dynamo.export(
+        module,
+        *copy.deepcopy(example_inputs),
+        aten_graph=True,
+    )
     # PT2E Quantization flow
-    if is_qat:
-        prepared_model = prepare_qat_pt2e(exported_model, quantizer)
-    else:
-        prepared_model = prepare_pt2e(exported_model, quantizer)
+    prepared_model = prepare_pt2e(exported_model, quantizer)
     # Calibration
     if is_qat:
         model.example_outputs = (torch.rand_like(module(*example_inputs)), )
